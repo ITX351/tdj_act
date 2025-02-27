@@ -1,70 +1,50 @@
-# Getting Started with Create React App
+## 天地劫：幽城再临
+### 手游《天地劫：幽城再临》PC端首领战伤害统计工具
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+---
 
-## Available Scripts
+### 使用方法
 
-In the project directory, you can run:
+1. **战斗结束后关闭游戏客户端。**
+2. **找到手游的数据存储路径：**
+   - 路径示例：`C:\Users\your_username\AppData\LocalLow\紫龙游戏\天地劫：幽城再临\Config`
+3. **找到最后一个 `.bl` 格式的文件，大小约 1~5MB：**
+   - 文件示例：`9834750923847561982_11223344(9876543210)_20250227_123456.bl`
+4. **选择此文件上传，获取统计数据。**
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 其他事项
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- 上传的文件不能大于15MB。
+- 统计出生时血量大于150,000的单位作为敌方BOSS单位，统计actorId>1000的单位作为我方单位，因此可能会有误判。
+- 回合数可能有误判，有些生成的文件怪怪的。
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 服务器 React.js 配置
 
-### `npm run build`
+#### Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+运行以下命令以安装所有依赖项：
+```sh
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+#### Running
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+运行以下命令并访问 `localhost:3000` 进行调试：
+```sh
+npm start
+```
 
-### `npm run eject`
+#### Release
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+运行以下命令以生成最小化的生产版本：
+```sh
+npm run build
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+by ITX351
