@@ -196,6 +196,8 @@ function App() {
             <li>统计出生时血量大于150,000的单位作为敌方BOSS单位，统计actorId&gt;1000的单位作为我方单位，因此可能会有误判。</li>
             <li>回合数可能有误判，有些生成的文件怪怪的。</li>
           </ul>
+          <h2>代码仓库</h2>
+          <p>查看代码仓库，请访问 <a href="https://github.com/ITX351/tdj_act" target="_blank" rel="noreferrer">ITX351 GitHub</a></p>
         </div>
       )}
       {result && (

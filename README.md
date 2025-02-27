@@ -1,6 +1,8 @@
 ## 天地劫：幽城再临
 ### 手游《天地劫：幽城再临》PC端首领战伤害统计工具
 
+**访问 [https://itx351.github.io/tdj_act/](https://itx351.github.io/tdj_act/) 在线使用。**
+
 ---
 
 ### 使用方法
