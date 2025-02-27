@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/tdj_act/static/css/main.81d7f183.css",
+    "main.js": "/tdj_act/static/js/main.385c3262.js",
+    "static/js/453.29d4d605.chunk.js": "/tdj_act/static/js/453.29d4d605.chunk.js",
+    "index.html": "/tdj_act/index.html",
+    "main.81d7f183.css.map": "/tdj_act/static/css/main.81d7f183.css.map",
+    "main.385c3262.js.map": "/tdj_act/static/js/main.385c3262.js.map",
+    "453.29d4d605.chunk.js.map": "/tdj_act/static/js/453.29d4d605.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.81d7f183.css",
+    "static/js/main.385c3262.js"
+  ]
+}
