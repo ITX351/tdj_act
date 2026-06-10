@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'; // 引入新的CSS文件
 
 const DEFAULT_HP_THRESHOLD = 150000; // 添加常量
+const DEFAULT_BOSS_PHASE_HP = 2000000;
 
 function App() {
   const [file, setFile] = useState(null);
@@ -13,6 +14,7 @@ function App() {
   const fileInputRef = useRef(null); // 添加引用
   const [helpVisible, setHelpVisible] = useState(false); // 添加帮助按钮状态
   const [hpThreshold, setHpThreshold] = useState(DEFAULT_HP_THRESHOLD); // 使用常量
+  const [bossPhaseHp, setBossPhaseHp] = useState(DEFAULT_BOSS_PHASE_HP);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -29,13 +31,14 @@ function App() {
       return;
     }
     const threshold = isNaN(hpThreshold) || hpThreshold <= 0 ? DEFAULT_HP_THRESHOLD : hpThreshold; // 使用常量
+    const phaseHp = isNaN(bossPhaseHp) || bossPhaseHp <= 0 ? DEFAULT_BOSS_PHASE_HP : bossPhaseHp;
     setFileName(file.name); // 存储文件名
     clearData();
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const fileContent = event.target.result;
-      const damageInfo = parseDamageInfo(fileContent, threshold);
+      const damageInfo = parseDamageInfo(fileContent, threshold, phaseHp);
 
       // 过滤并处理我方阵容
       const allies = {};
@@ -86,7 +89,7 @@ function App() {
     setLogs((prevLogs) => [...prevLogs, message]);
   };
 
-  const parseDamageInfo = (content, threshold) => {
+  const parseDamageInfo = (content, threshold, phaseHp) => {
     const damageInfo = {
       totalDamage: 0,
       characters: {},
@@ -106,6 +109,10 @@ function App() {
       damageInfo.totalDamage += damage;
       logMessage(`角色 ${damageInfo.characters[currentActor].charName} 使用 ${currentAction}，${damageInfo.boss.curActorId}${damageInfo.boss.curName} 受到了 ${damage} 伤害` + (changeBoss ? `, 换面时总伤害 ${damageInfo.totalDamage}` : ``));
     };
+
+    const calculatePhaseChangeDamage = (nextHp) => (
+      damageInfo.boss.curHp + Math.max(0, phaseHp - nextHp)
+    );
 
     const lines = content.split('\n');
     lines.forEach((line) => {
@@ -127,8 +134,10 @@ function App() {
           const curHp = parseInt(line.match(/curHp:(\d+)/)[1], 10);
           if (actorId === damageInfo.boss.curActorId || curHp >= threshold) { // 使用threshold
             if (currentActor && currentActor in damageInfo.characters) {
-              const damage = damageInfo.boss.curHp;
-              calculateDamage(damageInfo, currentActor, damage, currentAction, true);
+              const damage = calculatePhaseChangeDamage(curHp);
+              if (damage > 0) {
+                calculateDamage(damageInfo, currentActor, damage, currentAction, true);
+              }
             }
             damageInfo.boss.curName = charName;
             damageInfo.boss.curActorId = actorId;
@@ -148,6 +157,11 @@ function App() {
             const damage = damageInfo.boss.curHp - curHp;
             if (damage > 0) {
               calculateDamage(damageInfo, currentActor, damage, currentAction);
+              damageInfo.boss.curHp = curHp;
+            } else if (curHp > damageInfo.boss.curHp) {
+              const changeBossDamage = calculatePhaseChangeDamage(curHp);
+              calculateDamage(damageInfo, currentActor, changeBossDamage, currentAction, true);
+              damageInfo.boss.curHp = curHp;
             }
             currentActor = null;
             currentAction = null;
@@ -178,6 +192,14 @@ function App() {
             onChange={(e) => setHpThreshold(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
             placeholder="输入血量阈值"
           />
+          <input
+            type="text"
+            className="form-control ml-2"
+            style={{ width: '120px' }}
+            value={bossPhaseHp === 0 ? '' : bossPhaseHp}
+            onChange={(e) => setBossPhaseHp(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+            placeholder="输入换面血量"
+          />
           <button type="submit" className="btn btn-primary mr-2">上传</button>
           <button type="button" className="btn btn-secondary mr-2" onClick={clearData}>清除</button>
         </div>
@@ -202,6 +224,11 @@ function App() {
             </li>
             <li><strong>选择此文件上传，获取统计数据。</strong></li>
           </ol>
+          <h2>输入说明</h2>
+          <ul>
+            <li>血量阈值用于识别BOSS单位，默认150,000。出生时血量大于该值的敌方单位会被视为BOSS。</li>
+            <li>换面血量用于计算BOSS换面时的跨面伤害，默认2,000,000。换面伤害按“上一面剩余血量 + 换面血量 - 换面后当前血量”计算。</li>
+          </ul>
           <h2>其他事项</h2>
           <ul>
             <li>上传的文件不能大于15MB。</li>
@@ -210,6 +237,11 @@ function App() {
             <li>统计出生时血量大于指定值（默认为150,000）的单位作为<b>唯一</b>敌方BOSS单位，同时有多个BOSS存活会导致检测错误。统计actorId&gt;1000的单位作为我方单位，因此可能会有误判。</li>
             <li>回合数可能有误判，有些生成的文件怪怪的。</li>
             <li>目前只在几个手头已有的文件上做了简单测试。有任何无法正确加载的战斗记录，或你有更好的伤害判定方法，欢迎指出或fork。</li>
+          </ul>
+          <h2>更新笔记</h2>
+          <ul>
+            <li>0.2：修复BOSS换面时跨面伤害漏算的问题，并增加换面血量输入。</li>
+            <li>0.1：第一版发布，支持从战斗记录中统计首领战伤害。</li>
           </ul>
           <h2>代码仓库</h2>
           <p>查看代码仓库，请访问 <a href="https://github.com/ITX351/tdj_act" target="_blank" rel="noreferrer">ITX351 GitHub</a></p>
