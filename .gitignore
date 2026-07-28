@@ -48,3 +48,6 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+
+# samples
+/sample*

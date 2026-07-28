@@ -1,6 +1,6 @@
 {
   "name": "tdj_act",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "packageManager": "pnpm@11.5.2",
   "homepage": "https://itx351.github.io/tdj_act",

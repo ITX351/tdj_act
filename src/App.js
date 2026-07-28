@@ -4,9 +4,40 @@ import './App.css'; // 引入新的CSS文件
 
 const DEFAULT_HP_THRESHOLD = 150000; // 添加常量
 const DEFAULT_BOSS_PHASE_HP = 2000000;
+const MAX_TOTAL_FILE_SIZE = 100 * 1024 * 1024;
+const LOG_FILE_NAME_PATTERN = /^(\d+)_(\d+)\((\d+)\)_(\d{8})_(\d{6})\.bl$/i;
+
+export const groupLogFiles = (files) => {
+  const groups = new Map();
+
+  Array.from(files).forEach((file) => {
+    const match = file.name.match(LOG_FILE_NAME_PATTERN);
+    const playerId = match?.[1] || null;
+    const dungeonId = match?.[2] || null;
+    const battleId = match?.[3] || file.name;
+    const key = match ? `${playerId}_${dungeonId}(${battleId})` : `legacy:${file.name}`;
+    const timestamp = match ? `${match[4]}${match[5]}` : '';
+    if (!groups.has(key)) {
+      groups.set(key, { key, playerId, dungeonId, battleId, files: [] });
+    }
+    groups.get(key).files.push({ file, timestamp });
+  });
+
+  const sortedGroups = Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      files: group.files
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.file.name.localeCompare(b.file.name))
+        .map(({ file }) => file),
+    }))
+    .sort((a, b) => b.files.length - a.files.length || a.key.localeCompare(b.key));
+
+  return sortedGroups;
+};
 
 function App() {
-  const [file, setFile] = useState(null);
+  const [fileGroups, setFileGroups] = useState([]);
+  const [selectedGroupKey, setSelectedGroupKey] = useState('');
   const [result, setResult] = useState(null);
   const [logs, setLogs] = useState([]);
   const [logsVisible, setLogsVisible] = useState(false);
@@ -17,28 +48,35 @@ function App() {
   const [bossPhaseHp, setBossPhaseHp] = useState(DEFAULT_BOSS_PHASE_HP);
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const groups = groupLogFiles(e.target.files);
+    setFileGroups(groups);
+    setSelectedGroupKey(groups[0]?.key || '');
+    setResult(null);
+    setLogs([]);
+    setFileName('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
-      alert('请上传一个文件');
+    const selectedGroup = fileGroups.find((group) => group.key === selectedGroupKey);
+    if (!selectedGroup) {
+      alert('请选择战斗记录文件');
       return;
     }
-    if (file.size > 15 * 1024 * 1024) { // 文件大小限制为15MB
-      alert('文件大小不能超过15MB');
+    const totalSize = selectedGroup.files.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > MAX_TOTAL_FILE_SIZE) {
+      alert('所选战斗的文件总大小不能超过100MB');
       return;
     }
     const threshold = isNaN(hpThreshold) || hpThreshold <= 0 ? DEFAULT_HP_THRESHOLD : hpThreshold; // 使用常量
     const phaseHp = isNaN(bossPhaseHp) || bossPhaseHp <= 0 ? DEFAULT_BOSS_PHASE_HP : bossPhaseHp;
-    setFileName(file.name); // 存储文件名
-    clearData();
+    setFileName(`${selectedGroup.key}（${selectedGroup.files.length} 个分片）`);
+    setResult(null);
+    setLogs([]);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileContent = event.target.result;
-      const damageInfo = parseDamageInfo(fileContent, threshold, phaseHp);
+    try {
+      const fileContents = await Promise.all(selectedGroup.files.map((file) => file.text()));
+      const damageInfo = parseDamageInfo(fileContents.join('\n'), threshold, phaseHp);
 
       // 过滤并处理我方阵容
       const allies = {};
@@ -71,25 +109,26 @@ function App() {
       const totalBossDamage = bosses.reduce((sum, boss) => sum + boss.damage, 0);
 
       setResult({ sortedAllies, bosses, totalAllyDamage, totalBossDamage, totalDamage: damageInfo.totalDamage });
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      console.error(error);
+      alert('文件读取失败，请重新选择后再试。');
+    }
   };
 
   const clearData = () => {
-    setFile(null);
+    setFileGroups([]);
+    setSelectedGroupKey('');
     setResult(null);
     setLogs([]);
+    setFileName('');
     if (fileInputRef.current) {
       fileInputRef.current.value = ''; // 重置文件输入控件
     }
   };
 
-  const logMessage = (message) => {
-    console.log(message);
-    setLogs((prevLogs) => [...prevLogs, message]);
-  };
-
   const parseDamageInfo = (content, threshold, phaseHp) => {
+    const parsedLogs = [];
+    const logMessage = (message) => parsedLogs.push(message);
     const damageInfo = {
       totalDamage: 0,
       characters: {},
@@ -170,11 +209,12 @@ function App() {
           }
         }
       } else if (line.startsWith('--Turn:')) {
-        const currectTurn = parseInt(line.match(/--Turn:(\d+)/)[1], 10);
-        logMessage(`——当前回合 ${currectTurn}——`);
+        const currentTurn = parseInt(line.match(/--Turn:(\d+)/)[1], 10);
+        logMessage(`——当前回合 ${currentTurn}，累计伤害 ${damageInfo.totalDamage}——`);
       }
     });
 
+    setLogs(parsedLogs);
     return damageInfo;
   };
 
@@ -183,7 +223,22 @@ function App() {
       <h1 className="text-center mb-4">《天地劫：幽城再临》PC端首领战伤害统计工具</h1>
       <form onSubmit={handleSubmit} className="mb-4 d-flex justify-content-between align-items-center">
         <div className="form-group d-flex align-items-center">
-          <input type="file" className="form-control-file mr-2" onChange={handleFileChange} ref={fileInputRef} />
+          <input type="file" multiple className="form-control-file me-2" onChange={handleFileChange} ref={fileInputRef} />
+          {fileGroups.length > 0 && (
+            <select
+              className="form-select me-2"
+              style={{ width: 'auto', maxWidth: '260px', flex: '0 0 auto' }}
+              aria-label="选择战斗"
+              value={selectedGroupKey}
+              onChange={(e) => setSelectedGroupKey(e.target.value)}
+            >
+              {fileGroups.map((group) => (
+                <option key={group.key} value={group.key}>
+                  战斗 {group.battleId}（{group.files.length} 个文件）
+                </option>
+              ))}
+            </select>
+          )}
           <input
             type="text"
             className="form-control"
@@ -200,7 +255,7 @@ function App() {
             onChange={(e) => setBossPhaseHp(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
             placeholder="输入换面血量"
           />
-          <button type="submit" className="btn btn-primary mr-2">上传</button>
+          <button type="submit" className="btn btn-primary mr-2">分析</button>
           <button type="button" className="btn btn-secondary mr-2" onClick={clearData}>清除</button>
         </div>
         <button type="button" className="btn btn-info" onClick={() => setHelpVisible(!helpVisible)}>
@@ -217,12 +272,13 @@ function App() {
                 <li>路径示例：<code>C:\Users\your_username\AppData\LocalLow\紫龙游戏\天地劫：幽城再临\Config</code></li>
               </ul>
             </li>
-            <li><strong>找到最后一个 `.bl` 格式的文件，大小约 1~5MB：</strong>
+            <li><strong>找到本次战斗生成的最新的 `.bl` 文件：</strong>
               <ul>
                 <li>文件示例：<code>9834750923847561982_11223344(9876543210)_20250227_123456.bl</code></li>
               </ul>
             </li>
-            <li><strong>选择此文件上传，获取统计数据。</strong></li>
+            <li><strong>在文件选择窗口中批量选中这些文件，选择战斗 ID 后上传。</strong></li>
+            <li>文件只在浏览器本地读取和拼接，不会上传到服务器。</li>
           </ol>
           <h2>输入说明</h2>
           <ul>
@@ -231,7 +287,7 @@ function App() {
           </ul>
           <h2>其他事项</h2>
           <ul>
-            <li>上传的文件不能大于15MB。</li>
+            <li>单次所选战斗的文件总大小不能超过100MB。</li>
             <li>单人伤害只考虑每个人行动前后的血量差值，因此协攻、千秀阵造成的伤害均被统计为当前行动者的伤害。敌方BOSS行动后受到的伤害是我方附加的持续性伤害和地板伤害。</li>
             <li>总伤害未包括护盾值。新动物园的结算伤害是包括打在盾上的伤害的，数值上会有差别。</li>
             <li>统计出生时血量大于指定值（默认为150,000）的单位作为<b>唯一</b>敌方BOSS单位，同时有多个BOSS存活会导致检测错误。统计actorId&gt;1000的单位作为我方单位，因此可能会有误判。</li>
@@ -240,6 +296,7 @@ function App() {
           </ul>
           <h2>更新笔记</h2>
           <ul>
+            <li>0.3：支持批量选择分片，并按战斗 ID 分组、按文件名时间顺序拼接。</li>
             <li>0.2：修复BOSS换面时跨面伤害漏算的问题，并增加换面血量输入。</li>
             <li>0.1：第一版发布，支持从战斗记录中统计首领战伤害。</li>
           </ul>
