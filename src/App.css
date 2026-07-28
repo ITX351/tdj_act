@@ -12,3 +12,52 @@ th,
 td {
   white-space: nowrap;
 }
+
+.turn-damage-details {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.35rem;
+  text-align: left;
+}
+
+.turn-damage-details summary {
+  display: inline-block;
+  color: var(--bs-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.turn-damage-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.turn-damage-details[open] summary {
+  transform: rotate(90deg);
+}
+
+.turn-damage-popover {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  display: none;
+  min-width: 12rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-body-bg);
+  box-shadow: var(--bs-box-shadow);
+}
+
+.turn-damage-details[open] .turn-damage-popover,
+.turn-damage-details:hover .turn-damage-popover {
+  display: block;
+}
+
+.turn-damage-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 0.2rem;
+}

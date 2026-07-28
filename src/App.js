@@ -87,6 +87,31 @@ export const buildStatisticsRows = (records, names) => {
 const formatNumber = (value) => numberFormatter.format(value || 0);
 const formatPercent = (value) => `${(value * 100).toFixed(1)}%`;
 
+export const getTurnDamageEntries = (turnDamage = {}) =>
+  Object.entries(turnDamage)
+    .map(([turn, damage]) => [Number(turn) + 1, damage])
+    .sort(([turnA], [turnB]) => turnA - turnB);
+
+const TurnDamageDetails = ({ turnDamage }) => {
+  const entries = getTurnDamageEntries(turnDamage);
+  if (!entries.length) return null;
+
+  return (
+    <details className="turn-damage-details">
+      <summary aria-label="查看每回合伤害" title="查看每回合伤害">▸</summary>
+      <div className="turn-damage-popover">
+        <strong>每回合伤害</strong>
+        {entries.map(([turn, damage]) => (
+          <div className="turn-damage-row" key={turn}>
+            <span>第 {turn} 回合</span>
+            <span>{formatNumber(damage)}</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+};
+
 function App() {
   const [groups, setGroups] = useState([]);
   const [selectedKey, setSelectedKey] = useState('');
@@ -234,7 +259,10 @@ function App() {
                 {result.rows.map((row) => (
                   <tr key={`${row.CharId}-${row.MasterCharId}`}>
                     <td>{row.name}</td>
-                    <td className="text-end">{formatNumber(row.Damage)}</td>
+                    <td className="text-end">
+                      {formatNumber(row.Damage)}
+                      <TurnDamageDetails turnDamage={row.TurnDamageDict} />
+                    </td>
                     <td className="text-end">{formatNumber(row.BossDamgage)}</td>
                     <td className="text-end">{formatPercent(row.bossDamageShare)}</td>
                     <td className="text-end">{formatNumber(row.BeDamaged)}</td>

@@ -89,7 +89,7 @@ userId2BattleStatistics:<用户 ID>,[
 | 表格列 | 数据来源/计算 |
 | --- | --- |
 | 单位 | 以 `CharId` 从旧日志的 `charId/charName` 记录补齐；缺失时显示 `CharId`。 |
-| 总伤害 | `Damage` |
+| 总伤害 | `Damage`；数字旁的箭头可展开 `TurnDamageDict`，查看逐回合伤害。 |
 | 首领伤害 | `BossDamgage` |
 | 占比 | 本单位 `BossDamgage / 所有单位 BossDamgage 合计` |
 | 承伤 | `BeDamaged` |
@@ -97,6 +97,6 @@ userId2BattleStatistics:<用户 ID>,[
 | 暴击次数 | `Critical` |
 | 最高单次伤害 | `MaxDamage` |
 
-后续若恢复逐回合明细，可由 `TurnDamageDict` 生成；JSON 中从 0 开始的回合键应转换为从 1 开始的显示回合。
+逐回合明细由 `TurnDamageDict` 生成；JSON 中从 0 开始的回合键会转换为从 1 开始的显示回合。
 
 暂不展示技能 ID 和内部状态字段。

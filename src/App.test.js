@@ -2,6 +2,7 @@ import {
   buildStatisticsRows,
   extractBattleStatistics,
   extractCharacterNames,
+  getTurnDamageEntries,
   groupLogFiles,
 } from './App';
 import { readFileSync } from 'fs';
@@ -52,4 +53,12 @@ test('reads every record in json_sample.txt', () => {
   expect(records).toHaveLength(13);
   expect(records.reduce((sum, record) => sum + record.Damage, 0)).toBe(10515978);
   expect(records.reduce((sum, record) => sum + record.BossDamgage, 0)).toBe(10491740);
+});
+
+test('converts zero-based turn damage to sorted display turns', () => {
+  expect(getTurnDamageEntries({ 10: 225402, 0: 179018, 2: 266159 })).toEqual([
+    [1, 179018],
+    [3, 266159],
+    [11, 225402],
+  ]);
 });
